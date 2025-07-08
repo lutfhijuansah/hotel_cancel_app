@@ -3,11 +3,11 @@ import joblib
 import pandas as pd
 import calendar
 
-# --- Page and Title Configuration ---
+# --- Konfigurasi Halaman dan Judul ---
 st.set_page_config(
     page_title="Hotel Cancellation Predictor",
     page_icon="🏨",
-    layout="wide"  # Using a wide layout for better column fit
+    layout="wide"  # Menggunakan layout lebar agar lebih pas untuk kolom
 )
 
 st.title("🏨 Hotel Booking Cancellation Predictor")
@@ -17,7 +17,7 @@ st.write(
 )
 st.markdown("---")
 
-# --- Function to Load Model (with caching) ---
+# --- Fungsi untuk Memuat Model (dengan caching) ---
 @st.cache_resource
 def load_model():
     try:
@@ -34,10 +34,10 @@ if model is None or model_columns is None:
     st.stop()
 
 
-# --- User Input Area on Main Page ---
+# --- Area Input Pengguna di Halaman Utama ---
 st.header("⚙️ Enter Booking Details")
 
-# Create two columns for input
+# Membuat dua kolom untuk input
 col1, col2 = st.columns(2)
 
 with col1:
@@ -48,7 +48,6 @@ with col1:
         help="How many days are between the booking date and the arrival date? A longer lead time usually means a higher risk."
     )
     
-    # New Feature: Length of Stay
     stay_length = st.slider(
         'Total Length of Stay (Nights)', 1, 30, 3,
         help="Total nights the guest will be staying. Longer stays can sometimes have different risk profiles."
@@ -62,7 +61,6 @@ with col1:
     month_map = {name: i+1 for i, name in enumerate(month_names)}
     arrival_month = month_map[arrival_month_name]
     
-    # New Feature: Price per Night
     adr = st.number_input(
         'Average Price per Night',
         min_value=0.0, max_value=5000.0, value=100.0, step=10.0,
@@ -73,12 +71,18 @@ with col1:
 with col2:
     st.subheader("Guest Profile & History")
     
-    # New Feature: Number of Guests
     total_guests = st.number_input(
         'Total Number of Guests', min_value=1, max_value=20, value=2,
         help="Total number of adults, children, and babies for this booking."
     )
 
+    # WIDGET BARU DITAMBAHKAN DI SINI
+    required_car_parking_spaces = st.selectbox(
+        'Required Parking Spaces?',
+        options=[0, 1, 2],
+        help="Does the guest require a car parking space? This is a strong indicator of a committed booking."
+    )
+    
     is_repeated_guest_str = st.radio(
         'Is Repeated Guest?', ('No', 'Yes'), horizontal=True,
         help="Has this guest stayed at the hotel before? Repeated guests are less likely to cancel."
@@ -103,19 +107,19 @@ with col2:
 
 st.markdown("---")
 
-# Prediction button centered after all inputs
+# Tombol prediksi ditempatkan di tengah setelah semua input
 _, col_button, _ = st.columns([2, 1, 2])
 predict_button = col_button.button("Check Cancellation Risk", type="primary", use_container_width=True)
 
-# --- Prediction Logic and Results Display ---
+# --- Logika Prediksi dan Tampilan Hasil ---
 if predict_button:
     input_data = {
-        # New features
+        # Menambahkan fitur baru
         'adr': adr,
         'total_guests': total_guests,
         'stay_length': stay_length,
 
-        # Existing features
+        # Fitur yang sudah ada
         'lead_time': lead_time,
         'arrival_month': arrival_month,
         'deposit_type': deposit_type,
@@ -123,12 +127,13 @@ if predict_button:
         'is_repeated_guest': is_repeated_guest,
         'previous_cancellations': previous_cancellations,
 
-        # Default features (not input by user)
+        # Fitur default (tidak diinputkan user)
         'booking_changes': 0,
-        'required_car_parking_spaces': 0,
+        # MENGGUNAKAN NILAI DARI INPUT PENGGUNA
+        'required_car_parking_spaces': required_car_parking_spaces, 
         'country': 'PRT',
         'market_segment': 'Online TA',
-        'customer_type': 'Transient', # Using the most common default value
+        'customer_type': 'Transient', 
         'hotel': 'Resort Hotel'
     }
 
